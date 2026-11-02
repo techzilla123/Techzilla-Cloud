@@ -1,0 +1,10 @@
+{
+  "description": "Browse, play, watch, and download music, videos, and images in one responsive cloud media library accessible across your devices.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

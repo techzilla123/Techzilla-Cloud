@@ -1,0 +1,42 @@
+﻿[
+    {
+        "file":  "01-old-tablet.wav",
+        "text":  "Two days ago, I got access to my old tablet again.",
+        "start":  0.25
+    },
+    {
+        "file":  "02-broken-screen.wav",
+        "text":  "The screen was broken. I could barely use it.",
+        "start":  3.9
+    },
+    {
+        "file":  "03-built-techzilla.wav",
+        "text":  "As a web developer, I built Techzilla Cloud.",
+        "start":  7.35
+    },
+    {
+        "file":  "04-files-everywhere.wav",
+        "text":  "I wanted my files on every device, in one place.",
+        "start":  11.5
+    },
+    {
+        "file":  "05-live-demo.wav",
+        "text":  "Here\u0027s a little live demo.",
+        "start":  17.55
+    },
+    {
+        "file":  "06-landing-music.wav",
+        "text":  "On the landing page, Recently played is ready to go.",
+        "start":  19.8
+    },
+    {
+        "file":  "07-music-page.wav",
+        "text":  "On the Music page, I can browse quick picks and my full library.",
+        "start":  25.9
+    },
+    {
+        "file":  "08-closing.wav",
+        "text":  "Techzilla Cloud. All your files, together.",
+        "start":  35.2
+    }
+]

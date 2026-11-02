@@ -1,0 +1,730 @@
+<!doctype html>
+<html
+  lang="en"
+  data-resolution="landscape"
+  data-composition-variables='[
+    {"id":"productName","type":"string","label":"Product name","default":"Techzilla Cloud"},
+    {"id":"closingLine","type":"string","label":"Closing line","default":"All your files, together."}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --paper: #fdfbf8;
+        --ink: #07484a;
+        --sage: #456f6c;
+        --mint: #e0f6f1;
+        --line: rgba(7, 72, 74, 0.18);
+        --display: "Playfair Display", Georgia, serif;
+        --body: Inter, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--paper);
+      }
+
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--body);
+      }
+
+      .clip {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+      }
+
+      .scene {
+        display: grid;
+        align-items: center;
+        padding: 104px 142px;
+      }
+
+      .old-scene {
+        grid-template-columns: 0.82fr 1.18fr;
+        gap: 68px;
+        background: var(--paper);
+      }
+
+      .moment-copy {
+        max-width: 650px;
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin-bottom: 30px;
+        color: var(--sage);
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      .demo-prompt {
+        position: absolute;
+        inset: auto;
+        bottom: 116px;
+        left: 220px;
+        padding: 17px 25px;
+        border-left: 5px solid var(--ink);
+        color: var(--ink);
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .moment-copy h1,
+      .moment-copy h2,
+      .reveal h2,
+      .promise h2,
+      .end-card h2 {
+        margin: 0;
+        font-family: var(--display);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 0.98;
+      }
+
+      .moment-copy h1 {
+        max-width: 630px;
+        font-size: 91px;
+      }
+
+      .moment-copy h2 {
+        max-width: 650px;
+        font-size: 94px;
+      }
+
+      .moment-copy p {
+        max-width: 590px;
+        margin-top: 30px;
+        color: var(--sage);
+        font-size: 36px;
+        line-height: 1.35;
+      }
+
+      .tablet {
+        position: relative;
+        width: 100%;
+        height: 632px;
+        padding: 22px;
+        border: 5px solid #263739;
+        border-radius: 48px;
+        background: #162426;
+        box-shadow: 0 42px 100px rgba(7, 72, 74, 0.2);
+      }
+
+      .tablet-screen {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border-radius: 29px;
+        background: #dce5e2;
+      }
+
+      .tablet-speaker {
+        position: absolute;
+        top: 50%;
+        left: 4px;
+        width: 8px;
+        height: 48px;
+        border-radius: 8px;
+        background: #496063;
+        transform: translateY(-50%);
+      }
+
+      .screen-topline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        height: 58px;
+        padding: 0 28px;
+        border-bottom: 1px solid rgba(7, 72, 74, 0.12);
+        background: rgba(253, 251, 248, 0.86);
+      }
+
+      .screen-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #8ca9a2;
+      }
+
+      .screen-bar {
+        width: 56%;
+        height: 16px;
+        margin-left: 12px;
+        border-radius: 9px;
+        background: #d6e2de;
+      }
+
+      .screen-content {
+        position: absolute;
+        inset: 58px 0 0;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 44%),
+          #e5eeeb;
+      }
+
+      .screen-ghost {
+        position: absolute;
+        top: 19%;
+        left: 10%;
+        width: 48%;
+        height: 20%;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.66);
+      }
+
+      .screen-ghost::before,
+      .screen-ghost::after {
+        position: absolute;
+        left: 24px;
+        width: 46%;
+        height: 11px;
+        border-radius: 6px;
+        background: #b6ccc5;
+        content: "";
+      }
+
+      .screen-ghost::before {
+        top: 26px;
+      }
+
+      .screen-ghost::after {
+        top: 50px;
+        width: 30%;
+      }
+
+      .crack-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .crack {
+        fill: none;
+        stroke: rgba(43, 61, 63, 0.8);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 3;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .crack-light {
+        fill: none;
+        stroke: rgba(255, 255, 255, 0.78);
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+        vector-effect: non-scaling-stroke;
+      }
+
+      .broken-scene {
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 88px;
+        background: #e8f0ed;
+      }
+
+      .broken-scene .tablet {
+        height: 660px;
+      }
+
+      .broken-copy {
+        max-width: 750px;
+      }
+
+      .broken-copy h2 {
+        max-width: 700px;
+        font-family: var(--display);
+        font-size: 94px;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 0.98;
+      }
+
+      .broken-copy .eyebrow {
+        color: #b45b47;
+      }
+
+      .broken-copy p {
+        max-width: 640px;
+        margin-top: 28px;
+        color: var(--sage);
+        font-size: 35px;
+        line-height: 1.4;
+      }
+
+      .reveal {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 36px;
+        background: var(--ink);
+        color: var(--paper);
+        text-align: center;
+      }
+
+      .brand-mark {
+        display: block;
+        width: 144px;
+        height: 144px;
+        object-fit: contain;
+      }
+
+      .reveal h2 {
+        font-size: 112px;
+      }
+
+      .reveal p {
+        color: #c4ddd6;
+        font-size: 35px;
+        letter-spacing: 0.03em;
+      }
+
+      .promise {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding-left: 220px;
+        background: var(--mint);
+      }
+
+      .promise h2 {
+        max-width: 1320px;
+        font-size: 126px;
+      }
+
+      .promise .accent {
+        color: #6a968c;
+      }
+
+      .promise-rule {
+        width: 160px;
+        height: 8px;
+        margin-top: 45px;
+        border-radius: 8px;
+        background: var(--ink);
+      }
+
+      .demo-video {
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+        background: var(--paper);
+      }
+
+      .demo-label {
+        position: absolute;
+        inset: auto;
+        bottom: 56px;
+        left: 64px;
+        padding: 15px 23px;
+        border-left: 5px solid var(--ink);
+        background: rgba(253, 251, 248, 0.94);
+        color: var(--ink);
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .end-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 28px;
+        background: var(--paper);
+        text-align: center;
+      }
+
+      .end-card .brand-mark {
+        width: 120px;
+        height: 120px;
+      }
+
+      .end-card h2 {
+        color: var(--ink);
+        font-size: 104px;
+      }
+
+      .end-card p {
+        color: var(--sage);
+        font-size: 38px;
+      }
+
+      .end-card .end-rule {
+        width: 116px;
+        height: 5px;
+        margin-top: 10px;
+        background: #9abbb1;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-ivg1"
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="39"
+      data-width="1920"
+      data-height="1080"
+      data-motion-blur="on"
+    >
+      <section data-hf-id="hf-66d6"
+        id="old-scene"
+        class="clip scene old-scene"
+        data-start="0"
+        data-duration="3.6"
+        data-track-index="1"
+      >
+        <div data-hf-id="hf-yw4m" class="moment-copy">
+          <span data-hf-id="hf-0838" id="old-date" class="eyebrow">2 days ago</span>
+          <h1 data-hf-id="hf-m5o0" id="old-title">I got access to my old tablet again.</h1>
+        </div>
+        <div data-hf-id="hf-j0u6" id="old-tablet" class="tablet" aria-label="Illustration of the old tablet">
+          <span data-hf-id="hf-lqid" class="tablet-speaker"></span>
+          <div data-hf-id="hf-bmm1" class="tablet-screen">
+            <div data-hf-id="hf-383c" class="screen-topline">
+              <span data-hf-id="hf-mwqz" class="screen-dot"></span>
+              <span data-hf-id="hf-eenf" class="screen-dot"></span>
+              <span data-hf-id="hf-e0ce" class="screen-dot"></span>
+              <span data-hf-id="hf-thip" class="screen-bar"></span>
+            </div>
+            <div data-hf-id="hf-49ek" class="screen-content">
+              <div data-hf-id="hf-u0eq" class="screen-ghost"></div>
+              <svg data-hf-id="hf-nj2m" class="crack-layer" viewBox="0 0 1000 560" preserveAspectRatio="none">
+                <path data-hf-id="hf-7lyc" class="crack" d="M518 211 452 149 395 143 357 101 311 87" pathLength="1000" />
+                <path data-hf-id="hf-k9x3" class="crack-light" d="M518 211 452 149 395 143 357 101 311 87" pathLength="1000" />
+                <path data-hf-id="hf-k166" class="crack" d="M518 211 590 158 627 119 694 115 752 74" pathLength="1000" />
+                <path data-hf-id="hf-d10d" class="crack-light" d="M518 211 590 158 627 119 694 115 752 74" pathLength="1000" />
+                <path data-hf-id="hf-ltzn" class="crack" d="M518 211 569 278 571 330 630 367 665 428" pathLength="1000" />
+                <path data-hf-id="hf-gkeu" class="crack-light" d="M518 211 569 278 571 330 630 367 665 428" pathLength="1000" />
+                <path data-hf-id="hf-zzz9" class="crack" d="M518 211 454 273 405 282 365 335 315 356" pathLength="1000" />
+                <path data-hf-id="hf-sr2w" class="crack-light" d="M518 211 454 273 405 282 365 335 315 356" pathLength="1000" />
+                <path data-hf-id="hf-uokp" class="crack" d="M452 149 441 104 415 72M590 158 609 107 643 78M569 278 620 291 660 327M454 273 420 317 397 365" pathLength="1000" />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-men4"
+        id="broken-scene"
+        class="clip scene broken-scene"
+        data-start="3.6"
+        data-duration="3.65"
+        data-track-index="1"
+      >
+        <div data-hf-id="hf-kp2o" id="broken-tablet" class="tablet" aria-label="Illustration of a cracked screen">
+          <span data-hf-id="hf-5d49" class="tablet-speaker"></span>
+          <div data-hf-id="hf-277x" class="tablet-screen">
+            <div data-hf-id="hf-v53k" class="screen-topline">
+              <span data-hf-id="hf-dm1d" class="screen-dot"></span>
+              <span data-hf-id="hf-d7qc" class="screen-dot"></span>
+              <span data-hf-id="hf-ctfb" class="screen-dot"></span>
+              <span data-hf-id="hf-nobp" class="screen-bar"></span>
+            </div>
+            <div data-hf-id="hf-ibv8" class="screen-content">
+              <div data-hf-id="hf-1j2u" class="screen-ghost"></div>
+              <svg data-hf-id="hf-pwlu" class="crack-layer" viewBox="0 0 1000 560" preserveAspectRatio="none">
+                <path data-hf-id="hf-op0c" class="crack" d="M518 211 452 149 395 143 357 101 311 87" pathLength="1000" />
+                <path data-hf-id="hf-lmpj" class="crack-light" d="M518 211 452 149 395 143 357 101 311 87" pathLength="1000" />
+                <path data-hf-id="hf-169e" class="crack" d="M518 211 590 158 627 119 694 115 752 74" pathLength="1000" />
+                <path data-hf-id="hf-7wc1" class="crack-light" d="M518 211 590 158 627 119 694 115 752 74" pathLength="1000" />
+                <path data-hf-id="hf-gwab" class="crack" d="M518 211 569 278 571 330 630 367 665 428" pathLength="1000" />
+                <path data-hf-id="hf-rkfu" class="crack-light" d="M518 211 569 278 571 330 630 367 665 428" pathLength="1000" />
+                <path data-hf-id="hf-6kvt" class="crack" d="M518 211 454 273 405 282 365 335 315 356" pathLength="1000" />
+                <path data-hf-id="hf-blgw" class="crack-light" d="M518 211 454 273 405 282 365 335 315 356" pathLength="1000" />
+                <path data-hf-id="hf-4t0d" class="crack" d="M452 149 441 104 415 72M590 158 609 107 643 78M569 278 620 291 660 327M454 273 420 317 397 365" pathLength="1000" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div data-hf-id="hf-tyx0" id="broken-copy" class="broken-copy">
+          <span data-hf-id="hf-qsjf" class="eyebrow">The screen was broken</span>
+          <h2 data-hf-id="hf-pxwo">Too hard to use.</h2>
+        </div>
+      </section>
+
+      <section data-hf-id="hf-xwr6"
+        id="reveal-scene"
+        class="clip scene reveal"
+        data-start="7.25"
+        data-duration="4.15"
+        data-track-index="1"
+      >
+        <img data-hf-id="hf-888i"
+          id="reveal-mark"
+          class="brand-mark"
+          src="assets/techzilla-mark.png"
+          alt=""
+        />
+        <h2 data-hf-id="hf-2bou" id="reveal-title" data-var-text="productName">Techzilla Cloud</h2>
+        <p data-hf-id="hf-anny" id="reveal-subtitle">Built by a web developer</p>
+      </section>
+
+      <section data-hf-id="hf-nklh"
+        id="promise-scene"
+        class="clip scene promise"
+        data-start="11.4"
+        data-duration="6.1"
+        data-track-index="1"
+      >
+        <span data-hf-id="hf-oowr" id="promise-eyebrow" class="eyebrow">One place, across all my devices</span>
+        <h2 data-hf-id="hf-i4ha" id="promise-title">
+          <span data-hf-id="hf-66ol">All my files.</span><br data-hf-id="hf-x5px" />
+          <span data-hf-id="hf-1p2l" class="accent">Everywhere.</span>
+        </h2>
+        <span data-hf-id="hf-mdi3" id="promise-rule" class="promise-rule"></span>
+      </section>
+
+      <div data-hf-id="hf-6nlc"
+        id="demo-prompt"
+        class="clip demo-prompt"
+        data-start="14.9"
+        data-duration="2.6"
+        data-track-index="2"
+      >Here's a little live demo</div>
+
+      <video data-hf-id="hf-bwop"
+        id="landing-demo"
+        class="clip demo-video"
+        src="assets/landing-music.mp4"
+        data-start="17.5"
+        data-duration="7.5"
+        data-track-index="2"
+        muted
+        playsinline
+      ></video>
+      <div data-hf-id="hf-tqzt"
+        id="landing-label"
+        class="clip demo-label"
+        data-start="18"
+        data-duration="7"
+        data-track-index="3"
+      >Landing page · Recently played</div>
+
+      <video data-hf-id="hf-avgs"
+        id="music-demo"
+        class="clip demo-video"
+        src="assets/music-page.mp4"
+        data-start="25"
+        data-duration="10"
+        data-track-index="2"
+        muted
+        playsinline
+      ></video>
+      <div data-hf-id="hf-x4tm"
+        id="music-label"
+        class="clip demo-label"
+        data-start="25.5"
+        data-duration="9"
+        data-track-index="3"
+      >Music page · Quick picks</div>
+
+      <section data-hf-id="hf-aqfq"
+        id="end-scene"
+        class="clip scene end-card"
+        data-start="35"
+        data-duration="4"
+        data-track-index="4"
+      >
+        <img data-hf-id="hf-irak"
+          id="end-mark"
+          class="brand-mark"
+          src="assets/techzilla-mark.png"
+          alt=""
+        />
+        <h2 data-hf-id="hf-lps7" id="end-name" data-var-text="productName">Techzilla Cloud</h2>
+        <p data-hf-id="hf-ggnp" id="end-line" data-var-text="closingLine">All your files, together.</p>
+        <span data-hf-id="hf-wap7" id="end-rule" class="end-rule"></span>
+      </section>
+
+      <audio data-hf-id="hf-o9k5"
+        id="music-bed"
+        class="clip"
+        src="assets/music-bed.mp3"
+        data-start="0"
+        data-duration="38.85"
+        data-track-index="0"
+        data-volume="0.14"
+        data-fade-in="0.5"
+        data-fade-out="2"
+      ></audio>
+      <audio data-hf-id="hf-dlq2"
+        id="narration"
+        class="clip"
+        src="assets/narration.wav"
+        data-start="0"
+        data-duration="39"
+        data-track-index="1"
+        data-volume="1"
+      ></audio>
+      <audio data-hf-id="hf-e9un"
+        id="reveal-whoosh"
+        class="clip"
+        src="assets/sfx/whoosh-short.mp3"
+        data-start="7.2"
+        data-duration="0.57"
+        data-track-index="2"
+        data-volume="0.3"
+      ></audio>
+      <audio data-hf-id="hf-8f7l"
+        id="demo-click"
+        class="clip"
+        src="assets/sfx/click-soft.mp3"
+        data-start="17.45"
+        data-duration="0.37"
+        data-track-index="2"
+        data-volume="0.3"
+      ></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      tl.fromTo(
+        "#old-tablet",
+        { opacity: 0, scale: 0.88, rotation: -3, x: 90 },
+        { opacity: 1, scale: 1, rotation: 0, x: 0, duration: 0.72, ease: "power4.out" },
+        0.14,
+      );
+      tl.fromTo(
+        "#broken-tablet",
+        { opacity: 0, scale: 0.94, rotation: -2 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.55, ease: "power4.out" },
+        3.64,
+      );
+      tl.fromTo(
+        "#broken-copy",
+        { opacity: 0, x: 70 },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power4.out" },
+        3.95,
+      );
+      tl.fromTo(
+        "#broken-scene .crack",
+        { strokeDashoffset: 1000, opacity: 0.18 },
+        { strokeDashoffset: 0, opacity: 0.82, duration: 0.7, stagger: 0.07, ease: "power2.out" },
+        4.12,
+      );
+      tl.fromTo(
+        "#reveal-scene",
+        { clipPath: "inset(0 100% 0 0)" },
+        { clipPath: "inset(0 0% 0 0)", duration: 0.52, ease: "power2.inOut" },
+        7.25,
+      );
+      tl.fromTo(
+        "#reveal-mark",
+        { opacity: 0, scale: 0.72, rotation: -14 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.65, ease: "back.out(1.2)" },
+        7.42,
+      );
+      tl.fromTo(
+        "#reveal-title",
+        { opacity: 0, filter: "blur(12px)", y: 24 },
+        { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.62, ease: "power4.out" },
+        7.72,
+      );
+      tl.fromTo(
+        "#reveal-subtitle",
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.48, ease: "power3.out" },
+        8.15,
+      );
+      tl.fromTo(
+        "#promise-scene",
+        { clipPath: "inset(0 100% 0 0)" },
+        { clipPath: "inset(0 0% 0 0)", duration: 0.48, ease: "power2.inOut" },
+        11.4,
+      );
+      tl.fromTo(
+        "#promise-eyebrow",
+        { opacity: 0, x: -34 },
+        { opacity: 1, x: 0, duration: 0.42, ease: "power4.out" },
+        11.62,
+      );
+      tl.fromTo(
+        "#promise-title",
+        { opacity: 0, x: 90, filter: "blur(7px)" },
+        { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.7, ease: "power4.out" },
+        11.86,
+      );
+      tl.fromTo(
+        "#promise-rule",
+        { scaleX: 0, transformOrigin: "left center" },
+        { scaleX: 1, duration: 0.48, ease: "power3.out" },
+        12.22,
+      );
+      tl.fromTo(
+        "#demo-prompt",
+        { opacity: 0, x: -35 },
+        { opacity: 1, x: 0, duration: 0.42, ease: "power4.out" },
+        14.9,
+      );
+      tl.fromTo(
+        "#landing-label",
+        { opacity: 0, x: -28 },
+        { opacity: 1, x: 0, duration: 0.38, ease: "power4.out" },
+        18.15,
+      );
+      tl.fromTo(
+        "#music-label",
+        { opacity: 0, x: -28 },
+        { opacity: 1, x: 0, duration: 0.38, ease: "power4.out" },
+        25.55,
+      );
+      tl.fromTo(
+        "#end-mark",
+        { opacity: 0, scale: 0.76, rotation: 12 },
+        { opacity: 1, scale: 1, rotation: 0, duration: 0.55, ease: "back.out(1.2)" },
+        35.18,
+      );
+      tl.fromTo(
+        "#end-name",
+        { opacity: 0, filter: "blur(10px)", y: 18 },
+        { opacity: 1, filter: "blur(0px)", y: 0, duration: 0.55, ease: "power4.out" },
+        35.46,
+      );
+      tl.fromTo(
+        "#end-line",
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
+        35.86,
+      );
+      tl.fromTo(
+        "#end-rule",
+        { scaleX: 0, transformOrigin: "center center" },
+        { scaleX: 1, duration: 0.45, ease: "power3.out" },
+        36.12,
+      );
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

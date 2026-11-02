@@ -1,0 +1,17 @@
+{
+  "name": "promo-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.9.5 preview",
+    "check": "npx --yes hyperframes@0.9.5 check",
+    "render": "npx --yes hyperframes@0.9.5 render",
+    "publish": "npx --yes hyperframes@0.9.5 publish",
+    "record": "node scripts/record-demo.mjs",
+    "voiceover": "powershell -ExecutionPolicy Bypass -File scripts/generate-voiceover.ps1",
+    "mix-voiceover": "node scripts/mix-voiceover.mjs"
+  },
+  "devDependencies": {
+    "puppeteer": "^25.16.0"
+  }
+}
