@@ -2019,6 +2019,24 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [shareNotice, setShareNotice] = useState("")
   const [memorySlideshow, setMemorySlideshow] = useState<PhotoItem[] | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+
+  // Check authentication on mount
+  useEffect(() => {
+    const auth = localStorage.getItem("techzilla-auth")
+    const user = localStorage.getItem("techzilla-user")
+    if (auth === "true" && user) {
+      setIsAuthenticated(true)
+    } else {
+      setShowLoginModal(true)
+    }
+  }, [])
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true)
+    setShowLoginModal(false)
+  }
 
   const audioRef = useRef<HTMLAudioElement>(null)
   const playbackQueue = useRef(tracks)
@@ -2288,6 +2306,16 @@ export default function App() {
       if (!(error instanceof DOMException) || error.name !== "AbortError")
         await copyLink()
     }
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="app-shell">
+        {showLoginModal && (
+          <LoginModal isOpen={showLoginModal} onClose={handleLoginSuccess} />
+        )}
+      </div>
+    )
   }
 
   return (
@@ -2900,7 +2928,7 @@ export default function App() {
         </div>
       )}
 
-      {preview && (
+            {preview && (
         <div
           className="modal-backdrop"
           role="dialog"
@@ -2977,10 +3005,110 @@ export default function App() {
                   {(preview.index ?? 0) + 1} / {preview.items.length}
                 </span>
               </>
-        )}
-      </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {playing !== null && (
+        <div className="grand-player visible">
+          <button
+            className="grand-close"
+            onClick={() => {
+              audioRef.current?.pause()
+              if (audioRef.current) audioRef.current.currentTime = 0
+              setCurrentTime(0)
+              setPlaying(null)
+            }}
+            aria-label="Close music player"
+          >
+            <Icon name="x" size={15} />
+          </button>
+          <div className="grand-now">
+            {current ? <img src={current.cover} alt="" /> : <span />}
+            <div>
+              <b>{current?.title ?? "Choose a song"}</b>
+              <small>{current?.artist ?? "Techzilla Music"}</small>
+            </div>
+          </div>
+          <div className="grand-controls">
+            <button onClick={() => changeTrack(-1)} aria-label="Previous song">
+              <Icon name="chevron" />
+            </button>
+            <button
+              className="grand-play"
+              onClick={() => current && toggleTrack(current.id)}
+              aria-label={isPlaying ? "Pause song" : "Play song"}
+            >
+              <Icon name={isPlaying ? "pause" : "play"} />
+            </button>
+            <button onClick={() => changeTrack(1)} aria-label="Next song">
+              <Icon name="chevron" />
+            </button>
+          </div>
+          <div className="grand-progress">
+            <span>{formatTime(currentTime)}</span>
+            <input
+              type="range"
+              min="0"
+              max={duration || 0}
+              step="0.1"
+              value={Math.min(currentTime, duration || 0)}
+              aria-label="Seek through song"
+              style={{
+                background: `linear-gradient(to right, #fff ${
+                  duration ? (currentTime / duration) * 100 : 0
+                }%, rgba(255,255,255,.18) 0%)`,
+              }}
+              onChange={(event) => {
+                const nextTime = Number(event.target.value)
+                setCurrentTime(nextTime)
+                if (audioRef.current) audioRef.current.currentTime = nextTime
+              }}
+            />
+            <span>{formatTime(duration)}</span>
+          </div>
+          <a
+            href={current?.src}
+            download={current ? `${current.title}.mp3` : true}
+            aria-label="Download current song"
+          >
+            <Icon name="download" />
+          </a>
+          {current && (
+            <button
+              className="grand-share"
+              onClick={() => shareMedia("music", current.id, current.title)}
+              aria-label="Share current song"
+            >
+              <Icon name="share" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <audio
+        ref={audioRef}
+        onEnded={() => changeTrack(1)}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+        onLoadedMetadata={(event) =>
+          setDuration(
+            Number.isFinite(event.currentTarget.duration)
+              ? event.currentTarget.duration
+              : 0,
+          )
+        }
+        onDurationChange={(event) =>
+          setDuration(
+            Number.isFinite(event.currentTarget.duration)
+              ? event.currentTarget.duration
+              : 0,
+          )
+        }
+        onError={(event) => console.error("Audio load error:", event)}
+      />
     </div>
-  )}
-</div>
-)
+  )
 }
