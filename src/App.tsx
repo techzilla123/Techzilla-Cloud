@@ -2,14 +2,239 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 type IconName = "arrow" | "check" | "chevron" | "cloud" | "download" | "grid" | "heart" | "home" | "image" | "menu" | "more" | "music" | "pause" | "play" | "search" | "settings" | "share" | "sparkles" | "upload" | "video" | "x"
 
+// Utility function for stable random shuffle using a seed
+function shuffleArray<T>(array: T[], seed: number): T[] {
+  const shuffled = [...array]
+  let random = seed
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    random = (random * 1664525 + 1013904223) % 4294967296
+    const j = Math.floor((random / 4294967296) * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  return shuffled
+}
+
+// Generate a random seed based on current time (changes on every refresh)
+function getRandomSeed(): number {
+  // Use crypto.getRandomValues for better randomness, fallback to Date.now
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const arr = new Uint32Array(1)
+    crypto.getRandomValues(arr)
+    return arr[0]
+  }
+  return Date.now() + Math.random() * 1000000
+}
+
+// Group photos by inferred categories based on title/content analysis
+function groupPhotos(photos: PhotoItem[]): Record<string, PhotoItem[]> {
+  const groups: Record<string, PhotoItem[]> = {
+    "People & Portraits": [],
+    "Nature & Landscapes": [],
+    "Travel & Places": [],
+    "Events & Celebrations": [],
+    "Everyday Moments": [],
+  }
+
+  photos.forEach((photo) => {
+    const title = photo.title.toLowerCase()
+    if (
+      title.includes("portrait") ||
+      title.includes("selfie") ||
+      title.includes("face") ||
+      title.includes("people") ||
+      title.includes("person") ||
+      title.includes("me ") ||
+      title.includes("friend") ||
+      title.includes("family") ||
+      title.includes("baby") ||
+      title.includes("child") ||
+      title.includes("kid") ||
+      title.includes("woman") ||
+      title.includes("man ") ||
+      title.includes("girl") ||
+      title.includes("boy")
+    ) {
+      groups["People & Portraits"].push(photo)
+    } else if (
+      title.includes("nature") ||
+      title.includes("landscape") ||
+      title.includes("mountain") ||
+      title.includes("forest") ||
+      title.includes("tree") ||
+      title.includes("flower") ||
+      title.includes("sunset") ||
+      title.includes("sunrise") ||
+      title.includes("sky") ||
+      title.includes("cloud") ||
+      title.includes("waterfall") ||
+      title.includes("lake") ||
+      title.includes("river") ||
+      title.includes("ocean") ||
+      title.includes("beach") ||
+      title.includes("park") ||
+      title.includes("garden") ||
+      title.includes("field") ||
+      title.includes("hill")
+    ) {
+      groups["Nature & Landscapes"].push(photo)
+    } else if (
+      title.includes("travel") ||
+      title.includes("trip") ||
+      title.includes("vacation") ||
+      title.includes("city") ||
+      title.includes("paris") ||
+      title.includes("tokyo") ||
+      title.includes("kyoto") ||
+      title.includes("london") ||
+      title.includes("rome") ||
+      title.includes("barcelona") ||
+      title.includes("amsterdam") ||
+      title.includes("berlin") ||
+      title.includes("new york") ||
+      title.includes("los angeles") ||
+      title.includes("san francisco") ||
+      title.includes("cappadocia") ||
+      title.includes("istanbul") ||
+      title.includes("dubai") ||
+      title.includes("bangkok") ||
+      title.includes("bali") ||
+      title.includes("sydney") ||
+      title.includes("melbourne") ||
+      title.includes("airport") ||
+      title.includes("hotel") ||
+      title.includes("hostel") ||
+      title.includes("hostel") ||
+      title.includes("hostel") ||
+      title.includes("hostel")
+    ) {
+      groups["Travel & Places"].push(photo)
+    } else if (
+      title.includes("party") ||
+      title.includes("birthday") ||
+      title.includes("wedding") ||
+      title.includes("celebration") ||
+      title.includes("christmas") ||
+      title.includes("halloween") ||
+      title.includes("new year") ||
+      title.includes("anniversary") ||
+      title.includes("graduation") ||
+      title.includes("event") ||
+      title.includes("festival") ||
+      title.includes("concert") ||
+      title.includes("ceremony") ||
+      title.includes("reception")
+    ) {
+      groups["Events & Celebrations"].push(photo)
+    } else {
+      groups["Everyday Moments"].push(photo)
+    }
+  })
+
+  // Remove empty groups
+  Object.keys(groups).forEach((key) => {
+    if (groups[key].length === 0) {
+      delete groups[key]
+    }
+  })
+
+  return groups
+}
+
+// Group videos by inferred categories
+function groupVideos(videos: VideoItem[]): Record<string, VideoItem[]> {
+  const groups: Record<string, VideoItem[]> = {
+    "Family & Friends": [],
+    "Travel & Adventures": [],
+    "Events & Occasions": [],
+    "Daily Life": [],
+  }
+
+  videos.forEach((video) => {
+    const title = video.title.toLowerCase()
+    if (
+      title.includes("family") ||
+      title.includes("friend") ||
+      title.includes("baby") ||
+      title.includes("child") ||
+      title.includes("kid") ||
+      title.includes("mom") ||
+      title.includes("dad") ||
+      title.includes("mother") ||
+      title.includes("father") ||
+      title.includes("parent") ||
+      title.includes("sister") ||
+      title.includes("brother") ||
+      title.includes("cousin") ||
+      title.includes("grandma") ||
+      title.includes("grandpa") ||
+      title.includes("reunion") ||
+      title.includes("gathering")
+    ) {
+      groups["Family & Friends"].push(video)
+    } else if (
+      title.includes("travel") ||
+      title.includes("trip") ||
+      title.includes("vacation") ||
+      title.includes("adventure") ||
+      title.includes("hiking") ||
+      title.includes("camping") ||
+      title.includes("road trip") ||
+      title.includes("flight") ||
+      title.includes("beach") ||
+      title.includes("mountain") ||
+      title.includes("city") ||
+      title.includes("explore") ||
+      title.includes("journey") ||
+      title.includes("cappadocia") ||
+      title.includes("kyoto") ||
+      title.includes("paris")
+    ) {
+      groups["Travel & Adventures"].push(video)
+    } else if (
+      title.includes("party") ||
+      title.includes("birthday") ||
+      title.includes("wedding") ||
+      title.includes("celebration") ||
+      title.includes("christmas") ||
+      title.includes("halloween") ||
+      title.includes("new year") ||
+      title.includes("anniversary") ||
+      title.includes("graduation") ||
+      title.includes("event") ||
+      title.includes("festival") ||
+      title.includes("concert") ||
+      title.includes("ceremony")
+    ) {
+      groups["Events & Occasions"].push(video)
+    } else {
+      groups["Daily Life"].push(video)
+    }
+  })
+
+  Object.keys(groups).forEach((key) => {
+    if (groups[key].length === 0) {
+      delete groups[key]
+    }
+  })
+
+  return groups
+}
+
+// Create a memory slideshow: ALL photos shuffled randomly
+function createMemorySlideshow(photos: PhotoItem[], seed: number): PhotoItem[] {
+  return shuffleArray(photos, seed)
+}
+
 function Icon({
   name,
   size = 20,
   filled = false,
+  className,
 }: {
   name: IconName
   size?: number
   filled?: boolean
+  className?: string
 }) {
   const paths: Record<IconName, React.ReactNode> = {
     arrow: <path d="M5 12h14m-5-5 5 5-5 5" />,
@@ -120,6 +345,7 @@ function Icon({
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       {paths[name]}
     </svg>
@@ -140,7 +366,6 @@ type VideoItem = {
   title: string
   meta: string
   src: string
-  poster: string
   size?: number
 }
 
@@ -201,42 +426,36 @@ const videos: VideoItem[] = [
     title: "The summer edit",
     meta: "00:05 · 24 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/coast.jpg",
   },
   {
     id: 12,
     title: "Weekend in Kyoto",
     meta: "00:05 · 18 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/kyoto.jpg",
   },
   {
     id: 13,
     title: "Chasing waterfalls",
     meta: "00:05 · 31 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/waterfall.jpg",
   },
   {
     id: 14,
     title: "Above the clouds",
     meta: "00:05 · 22 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/flight.jpg",
   },
   {
     id: 15,
     title: "A colorful escape",
     meta: "00:05 · 28 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/lakeside.jpg",
   },
   {
     id: 16,
     title: "Cappadocia diary",
     meta: "00:05 · 35 MB",
     src: "/media/sample-video.mp4",
-    poster: "/media/balloons.jpg",
   },
 ]
 
@@ -428,7 +647,17 @@ const dropboxFiles: [string, string][] = [
   ["Zyno-TopBoy-Ozo-(Vistanaij.com).mp3", "AEukEfNZ1JOasyFviNJ3XKg"],
 ]
 
-const tracks = dropboxFiles.map(([title, fileId], index) => ({
+type TrackItem = {
+  id: number
+  title: string
+  artist: string
+  length: string
+  cover: string
+  color: string
+  src: string
+}
+
+const tracks: TrackItem[] = dropboxFiles.map(([title, fileId], index) => ({
   id: index + 21,
   title,
   artist: "Your Music Library",
@@ -493,12 +722,13 @@ function formatMediaSize(bytes: number) {
 }
 
 type PreviewItem = {
-  type: "image" | "video"
+  type: "image" | "video" | "memory-slideshow"
   title: string
   src: string
-  poster?: string
   id?: number
   kind?: "photo" | "video"
+  slideshowItems?: PhotoItem[]
+  currentSlideIndex?: number
 }
 
 type Preview = PreviewItem & { items?: PreviewItem[]; index?: number } | null
@@ -518,10 +748,33 @@ function createVideoQueue(items: VideoItem[]): PreviewItem[] {
     type: "video",
     title: video.title,
     src: video.src,
-    poster: video.poster,
     id: video.id,
     kind: "video",
   }))
+}
+
+function VideoThumbnail({
+  video,
+  className,
+}: {
+  video: VideoItem
+  className: string
+}) {
+  return (
+    <video
+      className={className}
+      src={video.src}
+      muted
+      playsInline
+      preload="metadata"
+      aria-hidden="true"
+      tabIndex={-1}
+      onLoadedMetadata={({ currentTarget }) => {
+        if (Number.isFinite(currentTarget.duration) && currentTarget.duration > 0)
+          currentTarget.currentTime = Math.min(0.1, currentTarget.duration / 2)
+      }}
+    />
+  )
 }
 
 function isMediaManifest(value: unknown): value is MediaManifest {
@@ -544,8 +797,7 @@ function isMediaManifest(value: unknown): value is MediaManifest {
         Number.isSafeInteger(item.id) &&
         typeof item.title === "string" &&
         typeof item.meta === "string" &&
-        typeof item.src === "string" &&
-        typeof item.poster === "string",
+        typeof item.src === "string",
     )
   )
 }
@@ -610,20 +862,36 @@ function PhotosPage({
   favorites,
   toggleFavorite,
   share,
+  openMemorySlideshow,
 }: {
   photos: PhotoItem[]
   open: (index: number) => void
   favorites: number[]
   toggleFavorite: (id: number) => void
   share: (kind: string, id: number, title: string) => void
+  openMemorySlideshow: (photos: PhotoItem[]) => void
 }) {
   const [query, setQuery] = useState("")
   const [showAll, setShowAll] = useState(false)
   const [visiblePhotoCount, setVisiblePhotoCount] = useState(60)
+  const [featuredSeed, setFeaturedSeed] = useState(() => getRandomSeed())
+
+  // Regenerate featured seed when component mounts (page becomes active)
+  useEffect(() => {
+    setFeaturedSeed(getRandomSeed())
+  }, [])
+
   const results = photos.filter((photo) =>
     `${photo.title} ${photo.meta}`.toLowerCase().includes(query.toLowerCase()),
   )
-  const featured = photos[0]
+  
+  // Random featured memory that changes on each page load
+  const featured = photos[featuredSeed % photos.length] ?? photos[0]
+  
+  // Group photos for proper categorization
+  const photoGroups = useMemo(() => groupPhotos(photos), [photos])
+  const groupEntries = Object.entries(photoGroups)
+
   if (!featured) {
     return (
       <main className="cinema-page photo-cinema">
@@ -641,14 +909,12 @@ function PhotosPage({
     )
   }
   const photoAt = (index: number) => photos[index % photos.length] ?? featured
-  const people = [
-    { label: "All", image: photoAt(3).src },
-    { label: "Me", image: photoAt(5).src },
-    { label: "Family", image: photoAt(1).src },
-    { label: "Friends", image: photoAt(4).src },
-    { label: "Favorites", image: photoAt(0).src },
-    { label: "Places", image: photoAt(2).src },
-  ]
+
+  // Random images for category thumbnails that change on reload
+  const categoryThumbs = useMemo(() => {
+    const seed = getRandomSeed()
+    return shuffleArray(photos, seed).slice(0, groupEntries.length + (favorites.length > 0 ? 1 : 0))
+  }, [photos, groupEntries.length, favorites.length])
 
   return (
     <main className="cinema-page photo-cinema">
@@ -711,13 +977,13 @@ function PhotosPage({
           >
             <div className="cinema-feature-copy">
               <span>Featured memory</span>
-              <h2>{featured.title}</h2>
+              <h2 className="truncate">{featured.title}</h2>
               <p>
                 Rediscover one of your favorite moments from your photo
                 collection.
               </p>
               <div>
-                <button className="feature-primary" onClick={() => open(0)}>
+                <button className="feature-primary" onClick={() => openMemorySlideshow(photos)}>
                   <Icon name="image" size={18} /> View memory
                 </button>
                 <button
@@ -738,22 +1004,39 @@ function PhotosPage({
               </div>
             </div>
             <div className="people-row">
-              {people.map((person, index) => (
-                <button
-                  key={person.label}
-                  onClick={() => open(index % photos.length)}
-                >
-                  <span>
-                    <img src={person.image} alt="" />
-                  </span>
-                  <b>{person.label}</b>
-                  <small>
-                    {[photos.length, 328, 184, 96, favorites.length, 42][index]}{" "}
-                    photos
-                  </small>
-                </button>
-              ))}
-            </div>
+                          {groupEntries.map(([label, groupPhotos], index) => (
+                            <button
+                              key={label}
+                              onClick={() => {
+                                setShowAll(true)
+                              }}
+                            >
+                              <span>
+                                <img src={categoryThumbs[index]?.src || groupPhotos[0]?.src || photoAt(0).src} alt="" />
+                              </span>
+                              <b>{label}</b>
+                              <small>
+                                {groupPhotos.length} photos
+                              </small>
+                            </button>
+                          ))}
+                          {favorites.length > 0 && (
+                            <button
+                              key="favorites"
+                              onClick={() => {
+                                setShowAll(true)
+                              }}
+                            >
+                              <span>
+                                <img src={categoryThumbs[groupEntries.length]?.src || photos.find(p => favorites.includes(p.id))?.src || photoAt(0).src} alt="" />
+                              </span>
+                              <b>Favorites</b>
+                              <small>
+                                {favorites.length} photos
+                              </small>
+                            </button>
+                          )}
+                        </div>
           </section>
 
           {showAll ? (
@@ -794,35 +1077,41 @@ function PhotosPage({
               <PhotoShelf
                 title="Made with you"
                 subtitle="Highlights created from your best moments"
-                items={photos.slice(0, 5)}
+                items={shuffleArray(photos, featuredSeed + 1).slice(0, 5)}
                 open={open}
                 share={share}
                 favorites={favorites}
                 toggleFavorite={toggleFavorite}
                 photos={photos}
-                onSeeAll={() => setShowAll(true)}
+                onSeeAll={() => { setShowAll(true); }}
               />
-              <PhotoShelf
-                title="Family stories"
-                subtitle="The people you come home to"
-                items={[photoAt(1), photoAt(4), photoAt(0), photoAt(2), photoAt(5)]}
-                open={open}
-                share={share}
-                favorites={favorites}
-                toggleFavorite={toggleFavorite}
-                photos={photos}
-              />
-              <PhotoShelf
-                title="Adventures"
-                subtitle="Trips, weekends, and places worth remembering"
-                items={[photoAt(2), photoAt(4), photoAt(5), photoAt(0), photoAt(3)]}
-                open={open}
-                share={share}
-                favorites={favorites}
-                toggleFavorite={toggleFavorite}
-                photos={photos}
-                last
-              />
+              {groupEntries[0] && (
+                <PhotoShelf
+                  title={groupEntries[0][0]}
+                  subtitle={groupEntries[0][1].length > 1 ? "Captured beautifully" : "A special moment"}
+                  items={groupEntries[0][1].slice(0, 5)}
+                  open={open}
+                  share={share}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
+                  photos={photos}
+                  onSeeAll={() => { setShowAll(true); }}
+                />
+              )}
+              {groupEntries[1] && (
+                <PhotoShelf
+                  title={groupEntries[1][0]}
+                  subtitle="Places worth remembering"
+                  items={groupEntries[1][1].slice(0, 5)}
+                  open={open}
+                  share={share}
+                  favorites={favorites}
+                  toggleFavorite={toggleFavorite}
+                  photos={photos}
+                  last
+                  onSeeAll={() => { setShowAll(true); }}
+                />
+              )}
             </>
           )}
         </>
@@ -901,7 +1190,12 @@ function PhotoShelfCard({
   return (
     <article className="photo-poster">
       <button className="poster-image" onClick={() => open(index)}>
-        <img src={photo.src} alt={photo.title} />
+        <img
+          src={photo.src}
+          alt={photo.title}
+          loading="lazy"
+          decoding="async"
+        />
         <span>
           <Icon name="image" size={18} /> Open
         </span>
@@ -943,10 +1237,23 @@ function VideosPage({
   const [query, setQuery] = useState("")
   const [showAll, setShowAll] = useState(false)
   const [visibleVideoCount, setVisibleVideoCount] = useState(60)
+  const [featuredSeed, setFeaturedSeed] = useState(() => getRandomSeed())
+
+  // Regenerate featured seed when component mounts (page becomes active)
+  useEffect(() => {
+    setFeaturedSeed(getRandomSeed())
+  }, [])
+
   const results = videos.filter((video) =>
     `${video.title} ${video.meta}`.toLowerCase().includes(query.toLowerCase()),
   )
-  const featured = videos[0]
+  
+  // Random featured video that changes on each page load
+  const featured = videos[featuredSeed % videos.length] ?? videos[0]
+  
+  // Group videos for proper categorization
+  const videoGroups = useMemo(() => groupVideos(videos), [videos])
+  const groupEntries = Object.entries(videoGroups)
 
   if (!featured) {
     return (
@@ -1058,16 +1365,19 @@ function VideosPage({
         <>
           <section
             className="cinema-feature video-cinema-feature"
-            style={{ backgroundImage: `url(${featured.poster})` }}
           >
+            <VideoThumbnail
+              video={featured}
+              className="video-cinema-feature-preview"
+            />
             <div className="cinema-feature-copy">
               <span>Featured film</span>
-              <h2>{featured.title}</h2>
+              <h2 className="truncate">{featured.title}</h2>
               <p>
                 Relive one of your favorite moments from your video collection.
               </p>
               <div>
-                <button className="feature-primary" onClick={() => open(0)}>
+                <button className="feature-primary" onClick={() => open(videos.findIndex(v => v.id === featured.id))}>
                   <Icon name="play" size={18} /> Play film
                 </button>
                 <button
@@ -1083,54 +1393,42 @@ function VideosPage({
           <VideoShelf
             title="Continue watching"
             subtitle="Pick up where you left off"
-            items={videos.slice(0, 5)}
+            items={shuffleArray(videos, featuredSeed + 1).slice(0, 5)}
             videos={videos}
             open={open}
             share={share}
             progress
           />
-          <VideoShelf
-            title="Travel stories"
-            subtitle="Your journeys, beautifully recut"
-            items={[
-              videos[5 % videos.length],
-              videos[1 % videos.length],
-              videos[2 % videos.length],
-              videos[4 % videos.length],
-              videos[3 % videos.length],
-            ]}
-            videos={videos}
-            open={open}
-            share={share}
-          />
-          <VideoShelf
-            title="Family & friends"
-            subtitle="The moments everyone keeps talking about"
-            items={[
-              videos[1 % videos.length],
-              videos[4 % videos.length],
-              videos[0],
-              videos[2 % videos.length],
-              videos[5 % videos.length],
-            ]}
-            videos={videos}
-            open={open}
-            share={share}
-          />
+          {groupEntries[0] && (
+            <VideoShelf
+              title={groupEntries[0][0]}
+              subtitle={groupEntries[0][1].length > 1 ? "Your journeys, beautifully recut" : "A memorable trip"}
+              items={groupEntries[0][1].slice(0, 5)}
+              videos={videos}
+              open={open}
+              share={share}
+              onSeeAll={() => { setShowAll(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            />
+          )}
+          {groupEntries[1] && (
+            <VideoShelf
+              title={groupEntries[1][0]}
+              subtitle="The moments everyone keeps talking about"
+              items={groupEntries[1][1].slice(0, 5)}
+              videos={videos}
+              open={open}
+              share={share}
+              onSeeAll={() => { setShowAll(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            />
+          )}
           <VideoShelf
             title="Recently added"
             subtitle="Fresh from your connected devices"
-            items={[
-              videos[3 % videos.length],
-              videos[5 % videos.length],
-              videos[2 % videos.length],
-              videos[1 % videos.length],
-              videos[4 % videos.length],
-            ]}
+            items={shuffleArray(videos, featuredSeed + 2).slice(0, 5)}
             videos={videos}
             open={open}
             share={share}
-            onSeeAll={() => setShowAll(true)}
+            onSeeAll={() => { setShowAll(true); window.scrollTo({ top: 0, behavior: "smooth" }); }}
             last
           />
         </>
@@ -1204,7 +1502,7 @@ function VideoShelfCard({
   return (
     <article className="video-poster">
       <button className="video-poster-image" onClick={() => open(index)}>
-        <img src={video.poster} alt="" />
+        <VideoThumbnail video={video} className="video-thumbnail-frame" />
         <i>
           <Icon name="play" size={18} />
         </i>
@@ -1250,6 +1548,230 @@ function LibraryEmpty({ query, type }: { query: string; type: string }) {
   )
 }
 
+function MemorySlideshowPlayer({
+  slideshowItems,
+  currentIndex,
+  onClose,
+  onNavigate,
+}: {
+  slideshowItems: PhotoItem[]
+  currentIndex: number
+  onClose: () => void
+  onNavigate: (dir: number) => void
+}) {
+  const [currentSlide, setCurrentSlide] = useState(currentIndex)
+  const [isPlaying, setIsPlaying] = useState(true)
+
+  useEffect(() => {
+    setCurrentSlide(currentIndex)
+  }, [currentIndex])
+
+  useEffect(() => {
+    if (!isPlaying || slideshowItems.length === 0) return
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideshowItems.length)
+    }, 3500)
+    return () => clearInterval(interval)
+  }, [isPlaying, slideshowItems.length])
+
+  return (
+    <div className="memory-slideshow-player">
+      <div className="slideshow-container">
+        {slideshowItems.map((item, index) => (
+          <div
+            key={item.id}
+            className={`slideshow-slide ${index === currentSlide ? "active" : ""}`}
+            style={{
+              opacity: index === currentSlide ? 1 : 0,
+              transform: index === currentSlide ? "scale(1)" : "scale(1.02)",
+              zIndex: index === currentSlide ? 2 : 1,
+            }}
+          >
+            <img src={item.src} alt={item.title} />
+            <div className="slide-overlay">
+              <h3>{item.title}</h3>
+              <p>{item.meta}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="slideshow-controls">
+        <button onClick={() => setIsPlaying(!isPlaying)} aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}>
+          <Icon name={isPlaying ? "pause" : "play"} size={24} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function LoginModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const formRef = useRef<HTMLDivElement>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setIsLoading(true)
+
+    await new Promise((resolve) => setTimeout(resolve, 800))
+
+    if (username === "Admin" && password === "#Admin123") {
+      localStorage.setItem("techzilla-auth", "true")
+      localStorage.setItem("techzilla-user", username)
+      onClose()
+    } else {
+      setError("Invalid credentials. Please try again.")
+      setIsLoading(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="login-modal-backdrop"
+      onClick={() => {}}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
+    >
+      <div className="login-modal" ref={formRef}>
+        <div className="login-modal-bg">
+          <div className="login-orb login-orb-1" />
+          <div className="login-orb login-orb-2" />
+          <div className="login-orb login-orb-3" />
+          <div className="login-cube">
+            <div className="cube-face cube-top" />
+            <div className="cube-face cube-left" />
+            <div className="cube-face cube-right" />
+            <div className="cube-face cube-bottom" />
+            <div className="cube-face cube-back" />
+            <div className="cube-face cube-front" />
+          </div>
+        </div>
+        <div className="login-modal-content">
+          <div className="login-header">
+            <div className="login-brand">
+              <span className="login-brand-cube">
+                <i />
+                <b />
+                <em />
+              </span>
+              <span>Techzilla <strong>Cloud</strong></span>
+            </div>
+            <h1 id="login-title">Welcome back</h1>
+            <p>Sign in to access your memories, music, and moments across all devices.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form" noValidate>
+            {error && (
+              <div className="login-error" role="alert">
+                <Icon name="x" size={16} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="login-field">
+              <label htmlFor="username" className="login-label">
+                <Icon name="home" size={18} />
+                <span>Username</span>
+              </label>
+              <div className="login-input-wrapper">
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter username"
+                  autoComplete="username"
+                  required
+                  disabled={isLoading}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="password" className="login-label">
+                <Icon name="settings" size={18} />
+                <span>Password</span>
+              </label>
+              <div className="login-input-wrapper">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter password"
+                  autoComplete="current-password"
+                  required
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  className="login-toggle-password"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading}
+                >
+                  <Icon name={showPassword ? "x" : "settings"} size={18} />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={isLoading || !username || !password}
+            >
+              {isLoading ? (
+                <>
+                  <span className="login-spinner" />
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="arrow" size={18} />
+                  <span>Access your cloud</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="login-footer">
+            <p>
+              Your session stays active forever. No need to sign in again.
+            </p>
+            <div className="login-hint">
+              <span className="hint-item">
+                <Icon name="check" size={14} />
+                Endless session
+              </span>
+              <span className="hint-item">
+                <Icon name="check" size={14} />
+                All devices sync
+              </span>
+              <span className="hint-item">
+                <Icon name="check" size={14} />
+                Private & secure
+              </span>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+  )
+}
 function MusicPage({
   tracks,
   playing,
@@ -1258,11 +1780,11 @@ function MusicPage({
   playQueue,
   share,
 }: {
-  tracks: typeof tracks
+  tracks: TrackItem[]
   playing: number | null
   isPlaying: boolean
-  toggleTrack: (id: number, queue?: typeof tracks) => void
-  playQueue: (queue: typeof tracks) => void
+  toggleTrack: (id: number, queue?: TrackItem[]) => void
+  playQueue: (queue: TrackItem[]) => void
   share: (kind: string, id: number, title: string) => void
 }) {
   const [query, setQuery] = useState("")
@@ -1273,7 +1795,7 @@ function MusicPage({
   )
   const featured = tracks[3]
   const albums = useMemo(() => {
-    const byArtist = new Map<string, typeof tracks>()
+    const byArtist = new Map<string, TrackItem[]>()
     tracks.forEach((track) => {
       const artist = getTrackArtist(track.title)
       if (!artist) return
@@ -1496,6 +2018,8 @@ export default function App() {
   const [duration, setDuration] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [shareNotice, setShareNotice] = useState("")
+  const [memorySlideshow, setMemorySlideshow] = useState<PhotoItem[] | null>(null)
+
   const audioRef = useRef<HTMLAudioElement>(null)
   const playbackQueue = useRef(tracks)
   const playbackIndex = useRef(-1)
@@ -1557,6 +2081,19 @@ export default function App() {
     [libraryPhotos, query],
   )
 
+  // Random seed for landing page - changes on every render to ensure randomness on refresh
+  const landingSeed = useMemo(() => getRandomSeed(), [])
+
+  // Random photos for landing page (Recent memories)
+  const landingPhotos = useMemo(() => {
+    return shuffleArray(libraryPhotos, landingSeed).slice(0, 6)
+  }, [libraryPhotos, landingSeed])
+
+  // Random videos for landing page (Stories in motion)
+  const landingVideos = useMemo(() => {
+    return shuffleArray(libraryVideos, landingSeed + 1).slice(0, 3)
+  }, [libraryVideos, landingSeed])
+
   const current = tracks.find((track) => track.id === playing)
   const photoBytes = libraryPhotos.reduce(
     (total, photo) => total + (photo.size ?? 0),
@@ -1598,7 +2135,8 @@ export default function App() {
 
   const toggleTrack = (id: number, queue: typeof tracks = tracks) => {
     const track = tracks.find((item) => item.id === id)
-    if (playing === id) {
+      if (!track) return
+      if (playing === id) {
       if (!audioRef.current) return
       if (audioRef.current.paused) {
         audioRef.current.play().catch((error) => {
@@ -1643,6 +2181,29 @@ export default function App() {
   const openPreview = (items: PreviewItem[], index: number) => {
     const item = items[index]
     setPreview({ ...item, items, index })
+  }
+
+  const openMemorySlideshow = (photos: PhotoItem[]) => {
+    const seed = getRandomSeed()
+    const slideshowItems = createMemorySlideshow(photos, seed)
+    if (slideshowItems.length === 0) return
+    
+    setMemorySlideshow(slideshowItems)
+    setPreview({
+      type: "memory-slideshow",
+      title: "Memory Lane",
+      src: slideshowItems[0].src,
+      slideshowItems,
+      currentSlideIndex: 0,
+      items: slideshowItems.map((p, i) => ({
+        type: "image" as const,
+        title: p.title,
+        src: p.src,
+        id: p.id,
+        kind: "photo" as const,
+      })),
+      index: 0,
+    })
   }
 
   const movePreview = (direction: number) => {
@@ -1732,90 +2293,92 @@ export default function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <button
-          className="mobile-menu icon-button"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          <Icon name="menu" />
-        </button>
-        <a
-          className="brand"
-          href="#"
-          onClick={() => navigate("Home")}
-          aria-label="Techzilla Cloud home"
-        >
-          <span className="brand-cube">
-            <i />
-            <b />
-            <em />
-          </span>
-          <span>
-            Techzilla <strong>Cloud</strong>
-          </span>
-        </a>
-
-        <nav className={menuOpen ? "main-nav open" : "main-nav"}>
-          {["Home", "Photos", "Videos", "Music"].map((item) => (
             <button
-              key={item}
-              className={active === item ? "active" : ""}
-              onClick={() => navigate(item)}
+              className="mobile-menu icon-button"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
             >
-              {item}
+              <Icon name="menu" />
             </button>
-          ))}
-        </nav>
+            <a
+              className="brand"
+              href="#"
+              onClick={() => navigate("Home")}
+              aria-label="Techzilla Cloud home"
+            >
+              <span className="brand-cube">
+                <i />
+                <b />
+                <em />
+              </span>
+              <span>
+                Techzilla <strong>Cloud</strong>
+              </span>
+            </a>
 
-        <div className="header-actions">
-          <button
-            className="icon-button"
-            aria-label="Search"
-            onClick={() =>
-              document
-                .getElementById(active === "Home" ? "search" : "page-search")
-                ?.focus()
-            }
-          >
-            <Icon name="search" />
-          </button>
-          <button className="icon-button hide-mobile" aria-label="Settings">
-            <Icon name="settings" />
-          </button>
-          <button className="avatar" aria-label="Open profile">
-            TZ
-            <span className="online-dot" />
-          </button>
-        </div>
-      </header>
+            <nav className={menuOpen ? "main-nav open" : "main-nav"}>
+              {["Home", "Photos", "Videos", "Music"].map((item) => (
+                <button
+                  key={item}
+                  className={active === item ? "active" : ""}
+                  onClick={() => navigate(item)}
+                >
+                  {item}
+                </button>
+              ))}
+            </nav>
 
-      {active !== "Home" &&
-        (active === "Photos" ? (
-          <PhotosPage
-            photos={libraryPhotos}
-            open={(index) => openPreview(photoQueue, index)}
-            favorites={favorites}
-            toggleFavorite={toggleFavorite}
-            share={shareMedia}
-          />
-        ) : active === "Videos" ? (
-          <VideosPage
-            videos={libraryVideos}
-            open={(index) => openPreview(videoQueue, index)}
-            share={shareMedia}
-          />
-        ) : (
-          <MusicPage
-            tracks={tracks}
-            playing={playing}
-            isPlaying={isPlaying}
-            toggleTrack={toggleTrack}
-            playQueue={playQueue}
-            share={shareMedia}
-          />
-        ))}
+            <div className="header-actions">
+              <button
+                className="icon-button"
+                aria-label="Search"
+                onClick={() =>
+                  document
+                    .getElementById(active === "Home" ? "search" : "page-search")
+                    ?.focus()
+                }
+              >
+                <Icon name="search" />
+              </button>
+              <button className="icon-button hide-mobile" aria-label="Settings">
+                <Icon name="settings" />
+              </button>
+              <button className="avatar" aria-label="Open profile">
+                TZ
+                <span className="online-dot" />
+              </button>
+            </div>
+          </header>
 
-      <main className={active === "Home" ? "" : "home-hidden"}>
+          {active !== "Home" ? (
+            active === "Photos" ? (
+              <PhotosPage
+                photos={libraryPhotos}
+                open={(index) => openPreview(photoQueue, index)}
+                favorites={favorites}
+                toggleFavorite={toggleFavorite}
+                share={shareMedia}
+                openMemorySlideshow={openMemorySlideshow}
+              />
+            ) : active === "Videos" ? (
+              <VideosPage
+                videos={libraryVideos}
+                open={(index) => openPreview(videoQueue, index)}
+                share={shareMedia}
+              />
+            ) : (
+              <MusicPage
+                tracks={tracks}
+                playing={playing}
+                isPlaying={isPlaying}
+                toggleTrack={toggleTrack}
+                playQueue={playQueue}
+                share={shareMedia}
+              />
+            )
+          ) : null}
+
+          <main className={active === "Home" ? "" : "home-hidden"}>
         <section className="hero">
           <div className="hero-orb orb-one" />
           <div className="hero-orb orb-two" />
@@ -1992,16 +2555,21 @@ export default function App() {
             </div>
           </div>
           <div className="photo-grid">
-            {filteredPhotos.map((photo, index) => (
+            {landingPhotos.map((photo, index) => (
               <article
                 className={`photo-card photo-${index + 1}`}
                 key={photo.id}
               >
                 <button
                   className="photo-open"
-                  onClick={() => openPreview(photoQueue, index)}
+                  onClick={() => openPreview(photoQueue, libraryPhotos.findIndex(p => p.id === photo.id))}
                 >
-                  <img src={photo.src} alt={photo.title} />
+                  <img
+                    src={photo.src}
+                    alt={photo.title}
+                    loading="lazy"
+                    decoding="async"
+                  />
                 </button>
                 <div className="photo-overlay">
                   <div>
@@ -2035,9 +2603,6 @@ export default function App() {
                 </div>
               </article>
             ))}
-            {filteredPhotos.length === 0 && (
-              <div className="empty-state">No memories match “{query}”.</div>
-            )}
           </div>
           <button
             className="secondary-button"
@@ -2062,12 +2627,15 @@ export default function App() {
               </button>
             </div>
             <div className="video-grid">
-              {libraryVideos.slice(0, 3).map((video, index) => (
+              {landingVideos.map((video, index) => (
                 <article className="video-card" key={video.id}>
-                  <img src={video.poster} alt="" />
+                  <VideoThumbnail
+                    video={video}
+                    className="video-thumbnail-frame"
+                  />
                   <button
                     className="video-play"
-                    onClick={() => openPreview(videoQueue, index)}
+                    onClick={() => openPreview(videoQueue, libraryVideos.findIndex(v => v.id === video.id))}
                     aria-label={`Play ${video.title}`}
                   >
                     <Icon name="play" size={index === 0 ? 26 : 20} />
@@ -2338,7 +2906,10 @@ export default function App() {
           role="dialog"
           aria-modal="true"
           aria-label={preview.title}
-          onMouseDown={() => setPreview(null)}
+          onMouseDown={() => {
+            setPreview(null)
+            setMemorySlideshow(null)
+          }}
         >
           <div
             className="preview-modal"
@@ -2363,24 +2934,30 @@ export default function App() {
                     <Icon name="share" />
                   </button>
                 )}
-                <button onClick={() => setPreview(null)} aria-label="Close">
+                <button onClick={() => { setPreview(null); setMemorySlideshow(null); }} aria-label="Close">
                   <Icon name="x" />
                 </button>
               </div>
             </div>
-            {preview.type === "image" ? (
+            {preview.type === "memory-slideshow" ? (
+              <MemorySlideshowPlayer
+                slideshowItems={preview.slideshowItems ?? []}
+                currentIndex={preview.currentSlideIndex ?? 0}
+                onClose={() => { setPreview(null); setMemorySlideshow(null); }}
+                onNavigate={(dir) => movePreview(dir)}
+              />
+            ) : preview.type === "image" ? (
               <img src={preview.src} alt={preview.title} />
             ) : (
               <video
                 key={`${preview.title}-${preview.index}`}
                 src={preview.src}
-                poster={preview.poster}
                 controls
                 autoPlay
                 onEnded={() => movePreview(1)}
               />
             )}
-            {preview.items && preview.items.length > 1 && (
+            {preview.items && preview.items.length > 1 && preview.type !== "memory-slideshow" && (
               <>
                 <button
                   className="preview-arrow previous"
@@ -2400,38 +2977,10 @@ export default function App() {
                   {(preview.index ?? 0) + 1} / {preview.items.length}
                 </span>
               </>
-            )}
-          </div>
-        </div>
-      )}
-      {shareNotice && (
-        <div className="share-toast">
-          <Icon name="check" size={16} /> {shareNotice}
-        </div>
-      )}
-
-      <audio
-        ref={audioRef}
-        onEnded={() => changeTrack(1)}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
-        onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-        onLoadedMetadata={(event) =>
-          setDuration(
-            Number.isFinite(event.currentTarget.duration)
-              ? event.currentTarget.duration
-              : 0,
-          )
-        }
-        onDurationChange={(event) =>
-          setDuration(
-            Number.isFinite(event.currentTarget.duration)
-              ? event.currentTarget.duration
-              : 0,
-          )
-        }
-        onError={(event) => console.error("Audio load error:", event)}
-      />
+        )}
+      </div>
     </div>
-  )
+  )}
+</div>
+)
 }

@@ -56,3 +56,35 @@ Takeout ZIP and extracted media in Drive requires extra storage.
 Google Drive is not a dedicated media CDN. Public links may be subject to
 Google download/traffic limits, and this setup should be tested with the
 website's expected visitor traffic before relying on it for broad distribution.
+
+## Importing Dropbox shared folders
+
+The website can read public Dropbox shared folders through a local catalog
+importer. It uses a headless browser to paginate the public folder listing,
+collects individual public file links, and writes supported photos and videos
+to `public/media-library.json`. It does not sign in to Dropbox or download the
+original media. The website stays static; build and redeploy it after each
+successful import.
+
+1. Keep both folders shared with **Anyone with the link**. Anyone who obtains
+   the individual links can access those files.
+2. Copy `.env.example` to `.env.local` and paste the public folder links into
+   `DROPBOX_MEDIA_FOLDER_URL_1` and `DROPBOX_MEDIA_FOLDER_URL_2`.
+3. Install project dependencies so Puppeteer has its browser available. If
+   needed, run `npx puppeteer browsers install chrome`.
+4. Run `npm run media:import:dropbox`. The importer checks that it has listed
+   every entry in both folders, separates supported image/video extensions,
+   skips Google Photos metadata sidecars, and writes direct `raw=1` Dropbox
+   links into the catalog.
+5. Run `npm run build` and redeploy the site. The Dropbox importer replaces
+   the existing media catalog, so do not run it alongside the Google Drive
+   importer unless you intend to switch the catalog source.
+
+The site embeds individual Dropbox links without showing Dropbox controls or
+branding. Video files stream from Dropbox and support byte-range requests;
+playback still depends on the browser supporting each video's codec. Dropbox
+may limit public-link bandwidth, and revoking a folder's public sharing breaks
+its links. The importer relies on Dropbox's public folder page; if Dropbox
+changes that page, the importer will fail rather than silently publish an
+incomplete catalog. Nested subfolders must be moved into the shared folder
+root before importing.
